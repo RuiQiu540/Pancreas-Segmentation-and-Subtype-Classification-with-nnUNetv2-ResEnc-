@@ -8,8 +8,7 @@ authors:
   - family-names: Qiu
     given-names: Rui
     email: rayqiu2024@outlook.com
-repository-code: "https://github.com/<your-username>/<your-repo>"
-license: "MIT"
+repository-code: "https://github.com/RuiQiu540/Pancreas-Segmentation-and-Subtype-Classification-with-nnUNetv2-ResEnc-"
 keywords:
   - nnUNetv2
   - medical image segmentation
