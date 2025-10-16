@@ -14,7 +14,7 @@
 ---
 
 ## Key scripts
-- `convert_to_nnunet_merged.py` - one-shot conversion of your `data/` (train/validation/test/subtype*) into nnUNetv2 RAW layout. It **integerizes labels** and writes `dataset.json`, `case_to_subtype.csv`, and `splits_final.json`.
+- `convert_to_nnunet.py` - one-shot conversion of your `data/` (train/validation/test/subtype*) into nnUNetv2 RAW layout. It **integerizes labels** and writes `dataset.json`, `case_to_subtype.csv`, and `splits_final.json`.
 - `scripts/eval_seg.py` / `scripts/eval_cls.py` - one-command evaluation for **DSC** and **macro-F1**. Both scripts auto-discover paths from environment variables, and also accept CLI overrides.
 
 ---
