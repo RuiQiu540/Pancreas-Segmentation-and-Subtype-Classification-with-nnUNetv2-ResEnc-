@@ -492,16 +492,16 @@ class nnUNetPredictor(object):
                     logits = prediction
                     # compatible [C,H,W] / [C,D,H,W] / [1,C,H,W] / [1,C,D,H,W]
                     if logits.ndim >= 4 and logits.shape[0] == 1:
-                        logits = logits[0]  # 去掉 batch 维
+                        logits = logits[0] 
                     if logits.ndim < 3:
                         raise RuntimeError(f"Unexpected prediction shape for classification: {logits.shape}")
 
-                    # 3) GAP over raw logits (与 Trainer 一致：对原始 seg logits 做全局平均)
+                    # 3) GAP over raw logits
                     log = logits
-                    # 若是 5D 且 batch 维为 1，去掉 batch 维
+                    # if 5D and batch dimension is 1，eliminate batch dimension
                     if log.ndim == 5 and log.shape[0] == 1:
                         log = log[0]
-                    # 展平空间维度后做均值 -> [C]
+                    # span space dimension and find mean -> [C]
                     pooled = log.reshape(log.shape[0], -1).mean(axis=1).astype(np.float32)   # [C]
 
                     W = getattr(self, "cls_head_w", None)
@@ -514,8 +514,6 @@ class nnUNetPredictor(object):
                         if self.verbose:
                             print(f"[classification] GAP(logits) pooled={np.round(pooled,4)} | logits={np.round(cls_logit,4)} | pred={pred_subtype}")
                     else:
-                        # 兜底：无头或维度不匹配
-                        # 如果你的标签只在 {1,2}，请改成下一行：pred_subtype = 1 + int(np.argmax(pooled[1:]))
                         pred_subtype = int(np.argmax(pooled))
                         if self.verbose:
                             print(f"[classification] NO/Bad head; fallback on pooled -> pred={pred_subtype}")
@@ -707,16 +705,14 @@ class nnUNetPredictor(object):
     def _internal_maybe_mirror_and_predict(self, x: torch.Tensor) -> torch.Tensor:
         mirror_axes = self.allowed_mirroring_axes if self.use_mirroring else None
 
-        # 拿到网络输出，拆分 seg / cls
         seg0, cls0 = self._split_seg_and_cls(self.network(x))
         prediction = seg0
 
-        # 分类分支的 TTA 累加器
         cls_acc = cls0
         nviews = 1
 
         if mirror_axes is not None:
-            # x 是 4D(2D任务)或5D(3D任务)：mirror_axes 最大不能超过 len(x.shape)-3
+            # x is 4D(2D task)or 5D(3D task)：mirror_axes cannot excess len(x.shape)-3
             assert max(mirror_axes) <= x.ndim - 3, 'mirror_axes does not match the dimension of the input!'
             mirror_axes = [m + 2 for m in mirror_axes]
 
@@ -732,7 +728,6 @@ class nnUNetPredictor(object):
 
         prediction /= nviews
 
-        # 暂存：本 patch 的 TTA 平均 cls logits，供滑窗层面再融合
         self._tmp_cls_logits_tta = None
         if cls_acc is not None:
             self._tmp_cls_logits_tta = cls_acc / float(nviews)
@@ -762,10 +757,9 @@ class nnUNetPredictor(object):
                 print(f'move image to device {results_device}')
             data = data.to(results_device)
                         # === neighbor-skip (2D) config — define once per volume ===
-            # 当前 patch 尺寸 (H, W)
+            # current patch size (H, W)
             ph, pw = self.configuration_manager.patch_size[:2]
 
-            # nnU-Net 的步长是比例（float 或 tuple）；优先用 tile_step_size，退化到 inference_step_size
             ss = getattr(self, "tile_step_size", None)
             if ss is None:
                 ss = getattr(self, "inference_step_size", 0.5)
@@ -777,12 +771,11 @@ class nnUNetPredictor(object):
                 sy = int(round(ph * float(ss)))
                 sx = int(round(pw * float(ss)))
 
-            # 将来要跳过的邻居（起点坐标 y0, x0）
+            # neighbor gonna skip（start coordinate y0, x0）
             skip_set = set()
 
-            # 边缘条带宽（像素）与前景阈值；保守起步，可按数据微调
-            _edge_m = max(4, min(ph, pw) // 16)   # 约 1/16 patch 尺寸
-            _fg_tau = 0.10                         # 0.05–0.20 都可尝试
+            _edge_m = max(4, min(ph, pw) // 16)  
+            _fg_tau = 0.10                        
 
             queue = Queue(maxsize=2)
             t = Thread(target=producer, args=(data, slicers, queue))
@@ -814,7 +807,7 @@ class nnUNetPredictor(object):
                         break
                     workon, sl = item
 
-                    # ---- 仅在2D配置下做“邻居跳过”，稳健地取 y0/x0 ----
+                    # ---- only skip neighbor in 2D config, y0/x0 ----
                     y0 = x0 = None
                     if len(self.configuration_manager.patch_size) == 2:
                         # 对 2D：空间切片总是 sl 的最后两个元素
@@ -823,7 +816,7 @@ class nnUNetPredictor(object):
                         if (y_slice is not None) and (x_slice is not None):
                             y0, x0 = y_slice.start, x_slice.start
 
-                    # 命中“可跳过”的邻居就直接跳过
+                    # skip if find skip-able neighbor
                     if (y0 is not None) and (x0 is not None) and ((y0, x0) in skip_set):
                         skip_set.discard((y0, x0))
                         queue.task_done()
@@ -831,32 +824,28 @@ class nnUNetPredictor(object):
                             pbar.update(1)
                         continue
 
-                    # 前向与TTA融合（seg）
                     prediction = self._internal_maybe_mirror_and_predict(workon)[0].to(results_device)
                     prediction = prediction.float()
-                    # 用于边缘检测的未加权logits（FP32），避免数值不稳
                     pi = prediction.float()
 
-                    # 高斯加权累加
                     if self.use_gaussian:
                         prediction = prediction * gaussian
                     predicted_logits[sl] += prediction
                     n_predictions[sl[1:]] += (gaussian if self.use_gaussian else 1)
 
-                    # ---- 仅在2D时做边缘检测并登记将来要跳过的邻居 ----
                     if (y0 is not None) and (x0 is not None):
                         with torch.no_grad():
                             ex = torch.exp(pi - torch.amax(pi, dim=0, keepdim=True))
                             prob = ex / (torch.sum(ex, dim=0, keepdim=True) + 1e-12)  # [C, h, w]
-                            fg = torch.amax(prob[1:], dim=0)                            # [h, w] 前景最大概率
+                            fg = torch.amax(prob[1:], dim=0)                           
 
                         m = _edge_m
                         top, bottom = fg[:m, :], fg[-m:, :]
                         left, right = fg[:, :m], fg[:, -m:]
                         if max(top.max(), bottom.max(), left.max(), right.max()).item() < _fg_tau:
-                            # 当前 patch 起点 (y0, x0) 已经在上面取过
-                            skip_set.add((y0, x0 + sx))   # 右邻
-                            skip_set.add((y0 + sy, x0))   # 下邻
+                            # current patch start point (y0, x0)
+                            skip_set.add((y0, x0 + sx))   # right neighbor
+                            skip_set.add((y0 + sy, x0))   # bottom neighbor
 
                     queue.task_done()
                     pbar.update()
@@ -1244,7 +1233,6 @@ def predict_entry_point():
         import csv as _csv
         with open(args.cls_gt_csv, 'r', newline='') as f:
             reader = _csv.DictReader(f)
-            # 兼容大小写
             cols = {k.lower(): k for k in reader.fieldnames}
             name_col = cols.get('names', None)
             subtype_col = cols.get('subtype', None)
