@@ -15,17 +15,6 @@
 
 ## Key scripts
 - `convert_to_nnunet.py` - one-shot conversion of your `data/` (train/validation/test/subtype*) into nnUNetv2 RAW layout. It **integerizes labels** and writes `dataset.json`, `case_to_subtype.csv`, and `splits_final.json`.
----
-
-## Quick navigation (click for full details)
-- **Reproduction process & environment** -> [Reproduce_process.md](./Reproduce_process.md)  
-  - Env & paths: **[0) Environment & Paths](./Reproduce_process.md#0-environment--paths)**  
-  - End-to-end commands: **[1-4](./Reproduce_process.md#1-convert-data--nnunet-raw-and-integerize-labels)**  
-  - Prediction & >= 10% speedup:**[5) Inference Speed](./Reproduce_process.md#6-inference-speed-10-improvement)**
-- **License** -> [LICENSE](./LICENSE)
-- **Citation** -> [CITATION.cff](./CITATION.cff)
-
----
 
 ## Short citation / acknowledgements
 - **nnU-Net (core method)**: Isensee *et al.*, *Nature Methods* 2021 - see `CITATION.cff`.  
