@@ -1,0 +1,9 @@
+name: nnunetv2-env
+channels: [pytorch, nvidia, conda-forge, defaults]
+dependencies:
+  - python=3.10
+  - pip
+  - pytorch=2.4.*    # or corresponding version
+  - pytorch-cuda=12.1 #only NVIDIA GPU;for CPU/Mac please check PyTorch official website
+  - pip:
+      - nnunetv2==2.6.2

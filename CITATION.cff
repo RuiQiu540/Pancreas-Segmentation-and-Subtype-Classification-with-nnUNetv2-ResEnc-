@@ -1,0 +1,88 @@
+cff-version: 1.2.0
+message: "If you use this repository, please cite it as below."
+title: "Pancreas Segmentation and Subtype Classification with nnUNetv2 (ResEnc)"
+version: "1.0.0"
+date-released: "2025-10-16"
+type: software
+authors:
+  - family-names: Qiu
+    given-names: Rui
+    email: Rayqiu2024@outlook.com
+    orcid: "https://orcid.org/0000-0000-0000-0000"
+repository-code: "https://github.com/<your-username>/<your-repo>"
+license: "MIT"
+keywords:
+  - nnUNetv2
+  - medical image segmentation
+  - pancreas
+  - deep learning
+
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Isensee
+      given-names: Fabian
+    - family-names: Jaeger
+      given-names: Paul F.
+    - family-names: Kohl
+      given-names: Simon A. A.
+    - family-names: Petersen
+      given-names: Jens
+    - family-names: Maier-Hein
+      given-names: Klaus H.
+  title: "nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation"
+  journal: "Nature Methods"
+  year: 2021
+  volume: "18"
+  issue: "2"
+  start: "203"
+  end: "211"
+  doi: "10.1038/s41592-020-01008-z"
+
+authors:
+  - family-names: Qiu
+    given-names: Rui
+
+references:
+  - type: software
+    title: "FLARE23: Exploiting Pseudo-Labeling and nnU-Netv2 Inference Acceleration"
+    authors:
+      - family-names: Huang
+        given-names: Ziyan
+    url: "https://github.com/Ziyan-Huang/FLARE23"
+    date-accessed: "2025-10-15"
+    license: "Apache-2.0"
+    notes: "Includes nnU-Net v2 inference script at nnunetv2/inference/predict_from_raw_data.py."
+  - type: software
+    title: "MICCAI-FLARE23 (Team snuhmedisc): Fine & Swift nnU-Net with Label Fusion"
+    authors:
+      - family-names: Kong
+        given-names: Young
+    url: "https://github.com/youngkong/MICCAI-FLARE23"
+    date-accessed: "2025-10-15"
+    license: "Apache-2.0"
+
+
+references:
+  # Software (this repository)
+  - type: software
+    title: "Pancreas Segmentation and Subtype Classification with nnUNetv2 (ResEnc)"
+    authors:
+      - family-names: Your Surname
+        given-names: Your Name
+    url: "https://github.com/<your-username>/<your-repo>"
+    year: 2025
+    version: "1.0.0"
+  # Dataset credit — 请把标题/链接替换为你的真实来源（Jun Ma 数据）
+  - type: dataset
+    title: "<Dataset title here, e.g., 'Pancreas Quiz (Segmentation & Subtype)'>"
+    authors:
+      - family-names: Ma
+        given-names: Jun
+    year: "<YEAR>"
+    institution: "University of Toronto, <具体实验室/部门，如 Bio Lab/BME>"
+    url: "<dataset/source URL>"
+    notes: "Data provider credited in report and README."
+
+
+    
