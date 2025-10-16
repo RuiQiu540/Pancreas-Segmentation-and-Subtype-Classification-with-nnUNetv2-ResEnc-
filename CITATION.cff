@@ -7,7 +7,7 @@ type: software
 authors:
   - family-names: Qiu
     given-names: Rui
-    email: Rayqiu2024@outlook.com
+    email: rayqiu2024@outlook.com
 repository-code: "https://github.com/<your-username>/<your-repo>"
 license: "MIT"
 keywords:
