@@ -15,8 +15,6 @@
 
 ## Key scripts
 - `convert_to_nnunet.py` - one-shot conversion of your `data/` (train/validation/test/subtype*) into nnUNetv2 RAW layout. It **integerizes labels** and writes `dataset.json`, `case_to_subtype.csv`, and `splits_final.json`.
-- `scripts/eval_seg.py` / `scripts/eval_cls.py` - one-command evaluation for **DSC** and **macro-F1**. Both scripts auto-discover paths from environment variables, and also accept CLI overrides.
-
 ---
 
 ## Quick navigation (click for full details)
@@ -24,7 +22,7 @@
   - Env & paths: **[0) Environment & Paths](./Reproduce_process.md#0-environment--paths)**  
   - End-to-end commands: **[1-4](./Reproduce_process.md#1-convert-data--nnunet-raw-and-integerize-labels)**  
   - Evaluation & >= 10% speedup: **[5) Evaluation](./Reproduce_process.md#5-evaluation)**, **[6) Inference Speed](./Reproduce_process.md#6-inference-speed-10-improvement)**
-- **License** -> [LICENSE](./LICENSE)  Third-party acknowledgements -> [NOTICE](./NOTICE)
+- **License** -> [LICENSE](./LICENSE)
 - **Citation** -> [CITATION.cff](./CITATION.cff)
 
 ---
@@ -45,9 +43,6 @@
 README.md (this file)  <- concise description + quick nav
 Reproduce_process.md   <- full pipeline, environment, evaluation
 convert_to_nnunet_merged.py
-scripts/
-  eval_seg.py
-  eval_cls.py
 patches/
   nnUNetTrainer.py
   predict_from_raw_data.py
