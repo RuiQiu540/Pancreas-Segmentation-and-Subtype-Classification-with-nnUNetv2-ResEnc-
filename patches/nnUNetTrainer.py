@@ -212,8 +212,7 @@ class nnUNetTrainer(object):
         self.cls_targets = []
         self.cls_losses = []
         
-        # === 分类指标设置：每个epoch计算macro F1 ===
-        # 现在每个epoch都会计算macro F1，无需额外配置
+        # calculate macro F1 in each epoch
 
 
         csv_path = join(self.preprocessed_dataset_folder_base, 'case_to_subtype.csv')
@@ -1052,18 +1051,18 @@ class nnUNetTrainer(object):
             l = self.loss(output, target)
             # === Classification branch ===
             if self.case2subtype:
-                # 用最高分辨率 seg logits 做 GAP → 分类
+                # use highest res seg logits do GAP → classification
                 seg_logits = output[0] if isinstance(output, (list, tuple)) else output
                 spatial_dims = tuple(range(2, seg_logits.ndim))
                 pooled = seg_logits.mean(dim=spatial_dims)          # (B, C_out_seg)
                 cls_logits = self.cls_head(pooled)                   # (B, num_subtypes)
 
-                # 从 batch 取样本名 → 规范化 → 查找标签
+                # from batch get sample name → normalize → find labels
                 keys = batch.get('keys', None)
                 if keys is None:
                     keys = batch.get('case_ids', None)
 
-                # 统一成 list[str]
+                # normalize to list[str]
                 if isinstance(keys, np.ndarray):
                     keys = keys.tolist()
                 elif not isinstance(keys, (list, tuple)):
@@ -1078,19 +1077,18 @@ class nnUNetTrainer(object):
                             keep_idx.append(idx)
                             targets.append(int(t))
 
-                    # 只对“有标签”的样本计分类损失（允许一个 batch 里部分无标签）
+                    # only calculate loss to sample with labels
                     if len(keep_idx) > 0:
                         cls_logits_sub = cls_logits[keep_idx]
                         cls_targets = torch.as_tensor(targets, device=cls_logits.device, dtype=torch.long)
                         cls_loss = nn.functional.cross_entropy(cls_logits_sub, cls_targets, reduction='mean')
 
-                        # （可选）按有效样本比例做个尺度补偿，避免有效样本少时分类项过弱
                         B = cls_logits.shape[0]
                         cls_loss = cls_loss * (B / len(keep_idx))
 
                         l = l + self.lambda_cls * cls_loss
 
-                        # 收集指标
+                        # collect figures
                         cls_preds = torch.argmax(cls_logits_sub, dim=1).cpu().numpy()
                         self.cls_predictions.extend(cls_preds.tolist())
                         self.cls_targets.extend(cls_targets.cpu().numpy().tolist())
@@ -1124,13 +1122,11 @@ class nnUNetTrainer(object):
             self.logger.my_fantastic_logging['cls_macro_f1'] = []
         self.logger.log('train_losses', loss_here, self.current_epoch)
 
-        # === 每个 epoch 统计分类（即使没有样本也说明原因） ===
-        # === 每个 epoch 统计分类（即使没有样本也说明原因） ===
+        # === statistic classification（even it is none print reason） ===
         if self.cls_predictions and self.cls_targets:
             mean_cls_loss = float(np.mean(self.cls_losses)) if self.cls_losses else 0.0
             macro_f1 = f1_score(self.cls_targets, self.cls_predictions, average='macro')
 
-            # 先注册键，再写日志，防止断言
             if 'cls_macro_f1' not in self.logger.my_fantastic_logging:
                 self.logger.my_fantastic_logging['cls_macro_f1'] = []
 
@@ -1145,7 +1141,7 @@ class nnUNetTrainer(object):
                 also_print_to_console=True
             )
 
-        # 清空累计
+        # clear
         self.cls_predictions, self.cls_targets, self.cls_losses = [], [], []
 
 
@@ -1359,7 +1355,7 @@ class nnUNetTrainer(object):
         self.set_deep_supervision_enabled(False)
         self.network.eval()
 
-        # 如果是 DDP + BS=1 + compile，会给出官方原注释里的提醒（保留）
+        # if it is DDP + BS=1 + compile，give notification from original script
         if self.is_ddp and self.batch_size == 1 and self.enable_deep_supervision and self._do_i_compile():
             self.print_to_log_file(
                 "WARNING! batch size is 1 during training and torch.compile is enabled. "
@@ -1368,11 +1364,11 @@ class nnUNetTrainer(object):
                 "Just rerun the validation with --val so that the first forward pass already has DS disabled."
             )
 
-        # === 推理器：调大步长加速（最小精度损失，通常能快 ~10%） ===
+        # === inferencer：increase step size to speed up（minimize loss） ===
         predictor = nnUNetPredictor(
-            tile_step_size=0.65,                # 原来是 0.5；0.60~0.70 之间通常安全
+            tile_step_size=0.65,                
             use_gaussian=True,
-            use_mirroring=True,                 # 如需更快可改 False（可能轻微降分）
+            use_mirroring=True,                
             perform_everything_on_device=True,
             device=self.device,
             verbose=False,
@@ -1384,7 +1380,7 @@ class nnUNetTrainer(object):
             self.dataset_json, self.__class__.__name__, self.inference_allowed_mirroring_axes
         )
 
-        # 收集分类结果（Names, Subtype）
+        # collect classification result（Names, Subtype）
         pred_names, pred_subtypes = [], []
 
         with multiprocessing.get_context("spawn").Pool(default_num_processes) as segmentation_export_pool:
@@ -1392,7 +1388,7 @@ class nnUNetTrainer(object):
             validation_output_folder = join(self.output_folder, 'validation')
             maybe_mkdir_p(validation_output_folder)
 
-            # 分配验证 keys（DDP 情况下切片分配）
+            # verify keys
             _, val_keys = self.do_split()
             if self.is_ddp:
                 last_barrier_at_idx = len(val_keys) // dist.get_world_size() - 1  # noqa: F841 (保持与上游一致)
@@ -1410,7 +1406,6 @@ class nnUNetTrainer(object):
             results = []
 
             for i, k in enumerate(dataset_val.identifiers):
-                # 控制异步导出队列长度，避免阻塞
                 proceed = not check_workers_alive_and_busy(segmentation_export_pool, worker_list, results,
                                                         allowed_num_queued=2)
                 while not proceed:
@@ -1437,7 +1432,7 @@ class nnUNetTrainer(object):
                 self.print_to_log_file(f'{k}, shape {data_torch.shape}, rank {self.local_rank}')
                 output_filename_truncated = join(validation_output_folder, k)
 
-                # === 1) 分割：滑窗返回 logits 并异步导出 ===
+                # === 1) segment：slide return logits and export ===
                 prediction = predictor.predict_sliding_window_return_logits(data_torch).cpu()
                 results.append(
                     segmentation_export_pool.starmap_async(
@@ -1448,8 +1443,8 @@ class nnUNetTrainer(object):
                     )
                 )
 
-                # === 2) 分类：使用最高分辨率 seg logits 做 GAP + Linear ===
-                # predictor 返回的是最高分辨率 logits（形状 (C, Z, Y, X)），此处统一到 (1, C, Z, Y, X)
+                # === 2) classification：use highest resolution seg logits do GAP + Linear ===
+                # predictor return highest resolution logits（shape (C, Z, Y, X)），normalize to (1, C, Z, Y, X)
                 if prediction.ndim == 4:
                     pred_logits = prediction[None]
                 else:
@@ -1458,7 +1453,7 @@ class nnUNetTrainer(object):
                 # (B=1, C, Z, Y, X) -> (B=1, C)
                 pooled = pred_logits.mean(dim=(2, 3, 4))
                 if hasattr(self, 'cls_head'):
-                    cls_logits = self.cls_head(pooled.to(self.device))   # 保证在同设备
+                    cls_logits = self.cls_head(pooled.to(self.device))  
                     cls_pred = int(torch.argmax(cls_logits, dim=-1).item())
                     name_str = k if isinstance(k, str) else str(k)
                     if name_str.endswith('.nii.gz'):
@@ -1466,10 +1461,10 @@ class nnUNetTrainer(object):
                     pred_names.append(name_str)
                     pred_subtypes.append(cls_pred)
 
-            # 等全部导出完成
+            # wait for export complete
             _ = [r.get() for r in results]
 
-        # === 写出分类 CSV：Names, Subtype ===
+        # === write classification CSV：Names, Subtype ===
         try:
             csv_out = join(self.output_folder, 'subtype_results.csv')
             import csv as _csv
