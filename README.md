@@ -21,7 +21,7 @@
 - **Reproduction process & environment** -> [Reproduce_process.md](./Reproduce_process.md)  
   - Env & paths: **[0) Environment & Paths](./Reproduce_process.md#0-environment--paths)**  
   - End-to-end commands: **[1-4](./Reproduce_process.md#1-convert-data--nnunet-raw-and-integerize-labels)**  
-  - Evaluation & >= 10% speedup: **[5) Evaluation](./Reproduce_process.md#5-evaluation)**, **[6) Inference Speed](./Reproduce_process.md#6-inference-speed-10-improvement)**
+  - Prediction & >= 10% speedup:**[5) Inference Speed](./Reproduce_process.md#6-inference-speed-10-improvement)**
 - **License** -> [LICENSE](./LICENSE)
 - **Citation** -> [CITATION.cff](./CITATION.cff)
 
