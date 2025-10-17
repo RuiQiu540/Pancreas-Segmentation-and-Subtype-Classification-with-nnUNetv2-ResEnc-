@@ -124,12 +124,11 @@ class nnUNetPredictor(object):
             # ---- extract classification head weights (match Trainer save format) ----
             if i == 0 and getattr(self, "cls_head_w", None) is None:
                 w = b = None
-                # 1) 首选：独立保存的 head 字典
+                # 1) primary：independently save head dic
                 sd_head = checkpoint.get('cls_head_weights', None)
                 if isinstance(sd_head, dict) and ('weight' in sd_head):
                     w = sd_head.get('weight', None)
                     b = sd_head.get('bias', None)
-                # 2) 兜底：扁平/嵌套在 state_dict 的命名
                 if w is None:
                     for container in ('state_dict', None):
                         sd = checkpoint.get(container) if container else checkpoint
@@ -810,7 +809,7 @@ class nnUNetPredictor(object):
                     # ---- only skip neighbor in 2D config, y0/x0 ----
                     y0 = x0 = None
                     if len(self.configuration_manager.patch_size) == 2:
-                        # 对 2D：空间切片总是 sl 的最后两个元素
+                        # to 2D：space slice is always last two element of sl
                         y_slice = sl[-2] if isinstance(sl[-2], slice) else None
                         x_slice = sl[-1] if isinstance(sl[-1], slice) else None
                         if (y_slice is not None) and (x_slice is not None):
