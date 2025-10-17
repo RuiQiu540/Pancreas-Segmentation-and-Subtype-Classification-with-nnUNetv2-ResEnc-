@@ -34,8 +34,8 @@
 
 ```powershell
 # Go to your project root
-cd D:\path	o\your\project
-
+cd D:\path_to\your\project
+# Please make sure you installed nnunetv2 in this directory 
 # Activate your conda env (make sure PyTorch is installed)
 conda activate <ENV_NAME>
 
@@ -139,8 +139,8 @@ $env:nnUNet_results\Dataset701_PancreasQuiz\...
 ```powershell
 nnUNetv2_predict `
   -d 701 -c 2d -f 0 -tr nnUNetTrainer -p $plans_id -chk best `
-  -i "$env:nnUNet_raw\Dataset701_PancreasQuiz\imagesTs" `
-  -o "$env:nnUNet_results\Dataset701_PancreasQuiz\pred_2d_f0"
+  -i "path\to\directory_of_data_you_want_to_predict" `
+  -o "path\to\output\directory"
 ```
 
 - Optional speed/accuracy trade‑offs:
