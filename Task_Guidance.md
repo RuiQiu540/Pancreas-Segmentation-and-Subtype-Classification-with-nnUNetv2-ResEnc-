@@ -138,7 +138,7 @@ $env:nnUNet_results\Dataset701_PancreasQuiz\...
 
 ```powershell
 nnUNetv2_predict `
-  -d 701 -c 2d -f 0 -tr nnUNetTrainer -p $plans_id -chk best `
+  -d 701 -c 2d -f 0 -tr nnUNetTrainer -p nnUNetPlannerResEncM -chk best `
   -i "path\to\directory_of_data_you_want_to_predict" `
   -o "path\to\output\directory"
 ```
