@@ -84,7 +84,14 @@ def main():
         for i in pool.imap_unordered(process_one,images):
             pass
     t3 = time.perf_counter()
+    
+    # we can add a chunksize to imap_unordered(...) to reduce the dispatch overhead.
+    # however, after testing with chunksize=2, it actually became slower.
+    # this is because our samples vary a lot in size, so bundling multiple tasks together makes the slow ones block the fast ones.
+    # from the tests (and discussion with GPT), it seems chunksize only helps when tasks are fairly uniform and the total number of tasks is large.
+    # the actual gain in this case is negligible, so I keep chunksize=1 here.
 
+    
     print("multi processor completed!")
     print(f"time spent on this progress is {t3-t2}")
     
@@ -92,4 +99,5 @@ def main():
     print("task completed")
 
 if __name__ == "__main__":
+
     main()
